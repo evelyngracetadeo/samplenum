@@ -467,6 +467,110 @@ H5P.Video=function(p,h){function f(n,e,t={}){var i=this;i.oldTime=t.previousStat
 </script>
 
 
+<style>
+  .tts-btn {
+    position: fixed; right: 12px; bottom: 12px; z-index: 99999;
+    background: #1e3a8a; color: #fff; border: 0; border-radius: 999px;
+    padding: 10px 14px; font: 700 13px Arial, sans-serif; cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,.25);
+  }
+  .tts-btn:hover { background: #0f0f7a; }
+</style>
+
+<script>
+  /* ------------ SIMPLE TEXT-TO-SPEECH ------------ */
+  function speak(text, lang = 'en-US') {
+    if (!text) return;
+    try {
+      if (speechSynthesis.speaking) speechSynthesis.cancel(); // stop ongoing
+      const utter = new SpeechSynthesisUtterance(text.trim());
+      utter.lang = lang;     // 'en-US' (English). Try 'fil-PH' / 'tl-PH' for Filipino (depends on device/browser)
+      utter.rate = 1.0;      // speed (0.1–2.0)
+      utter.pitch = 1.0;     // voice pitch (0–2)
+      speechSynthesis.speak(utter);
+    } catch (e) {
+      console.warn('TTS error:', e);
+    }
+  }
+
+  /* ------------ FIND CURRENT QUESTION TEXT (robust selectors) ------------ */
+  function textOf(el) { return (el && el.innerText) ? el.innerText.trim() : ''; }
+  function isVisible(el) {
+    if (!el) return false;
+    const s = getComputedStyle(el);
+    if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0) return false;
+    const rect = el.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function getCurrentQuestionText() {
+    // 1) Common H5P/Lumi selectors
+    const selectors = [
+      '.h5p-question .question-text',                // H5P Question (text prompt)
+      '.h5p-question-content .h5p-question-introduction',
+      '.h5p-question-content .h5p-question-text',
+      '.h5p-multichoice .h5p-question-introduction',
+      '.h5p-multichoice .h5p-question-text',
+      '.h5p-true-false .h5p-question-text',
+      '.h5p-single-choice-set .h5p-question-text',
+      '.h5p-blanks .h5p-question-text',
+      '.h5p-interactive-book .h5p-page-content h1, .h5p-interactive-book .h5p-page-content h2',
+      '.h5p-interactive-video .h5p-dialog',         // prompts in IV
+      '.h5p-column .h5p-content > h1, .h5p-column .h5p-content > h2, .h5p-column .h5p-content > p'
+    ];
+
+    for (const sel of selectors) {
+      const el = document.querySelector(sel);
+      if (isVisible(el)) {
+        const t = textOf(el);
+        if (t) return t;
+      }
+    }
+
+    // 2) Fallback: largest visible heading or block with text
+    const candidates = Array.from(document.querySelectorAll('h1,h2,h3,.h5p-question,.h5p-question-content,.h5p-content,.q .stem'));
+    let best = '';
+    candidates.forEach(el => {
+      if (!isVisible(el)) return;
+      const t = textOf(el);
+      // prefer longer meaningful text
+      if (t && t.length > best.length) best = t;
+    });
+    return best;
+  }
+
+  /* ------------ BUTTON SETUP ------------ */
+  function ensureTTSButton() {
+    if (document.querySelector('.tts-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'tts-btn'; btn.type = 'button';
+    btn.textContent = '🔊 Read question';
+    btn.title = 'Listen to the current question';
+
+    btn.onclick = () => {
+      const text = getCurrentQuestionText();
+      if (!text) {
+        // last resort: read visible options headers, if any
+        const alt = document.querySelector('.h5p-question, .h5p-content, .q');
+        const fallback = textOf(alt);
+        speak(fallback || 'No question text detected.', 'en-US');
+      } else {
+        speak(text, 'en-US'); // change to 'fil-PH' or 'tl-PH' if you prefer Filipino (device support varies)
+      }
+    };
+    document.body.appendChild(btn);
+  }
+
+  // Create the button now and re-assert if H5P re-renders
+  ensureTTSButton();
+  const mo = new MutationObserver(() => ensureTTSButton());
+  mo.observe(document.body, { childList: true, subtree: true });
+</script>
+<!-- === END FLOATING VOICE BUTTON === -->
+
+
+
+
 
 
 </body>
