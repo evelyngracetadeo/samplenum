@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MathTibay — Numeracy Practice</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root{
+      /* Light, low-contrast palette */
+      --bg:#f8fafc;        /* slate-50 */
+      --surface:#ffffff;   /* white */
+      --border:#e2e8f0;    /* slate-200 */
+      --text:#0f172a;      /* slate-900 */
+      --muted:#475569;     /* slate-600 */
+      --pill:#eef2ff;      /* indigo-50 */
+      --pill-border:#c7d2fe; /* indigo-200 */
+      --good:#16a34a;      /* green-600 */
+      --warn:#f59e0b;      /* amber-500 */
+      --focus:#2563eb;     /* blue-600 */
+      /* Level colors */
+      --lv1:#22c55e; /* green */
+      --lv2:#f59e0b; /* amber */
+      --lv3:#6366f1; /* indigo */
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial}
+    header{padding:16px;display:flex;align-items:center;gap:12px;background:#ffffffcc;backdrop-filter:blur(6px);border-bottom:1px solid var(--border);position:sticky;top:0}
+    .logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(145deg,#60a5fa,#2563eb);display:grid;place-items:center;color:white;font-weight:900}
+    h1{font-size:clamp(18px,4vw,26px);margin:0}
+    .subtitle{font-size:14px;color:var(--muted)}
+    .container{max-width:960px;margin:0 auto;padding:16px}
+    .grid{display:grid;grid-template-columns:1fr;gap:16px} /* vertical on phone */
+    @media(min-width:800px){.grid{grid-template-columns:repeat(3,1fr)}}
+    .level{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:0 3px 10px rgba(15,23,42,.05)}
+    .level h2{margin:0 0 4px;font-size:18px}
+    .pill{display:inline-flex;align-items:center;gap:8px;background:var(--pill);border:1px solid var(--pill-border);color:#4338ca;padding:6px 10px;border-radius:999px;font-size:12px}
+    .sessions{margin-top:10px;display:flex;flex-direction:column;gap:10px}
+    .card{padding:12px;border-radius:12px;background:#ffffff;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:10px}
+    .card h3{margin:0;font-size:14px}
+    .meta{font-size:12px;color:var(--muted)}
+    .actions{display:flex;align-items:center;gap:8px}
+    .btn{appearance:none;border:1px solid var(--border);border-radius:10px;padding:8px 10px;font-weight:600;cursor:pointer;background:#fff;color:#0f172a}
+    .btn:focus{outline:3px solid #93c5fd}
+    .start{border-color:#93c5fd;background:#e0f2fe;color:#0c4a6e}
+    .preview{background:#f1f5f9}
+    .footer{margin-top:10px;color:var(--muted);font-size:12px}
+    .progress{height:8px;background:#f1f5f9;border:1px solid var(--border);border-radius:999px;overflow:hidden;margin-top:8px}
+    .bar{height:100%;width:0}
+    .bar.lv1{background:linear-gradient(90deg,#86efac,#22c55e)}
+    .bar.lv2{background:linear-gradient(90deg,#fde68a,#f59e0b)}
+    .bar.lv3{background:linear-gradient(90deg,#c7d2fe,#6366f1)}
+    .notice{margin:10px 0;padding:10px;border-radius:12px;background:#f8fafc;border:1px solid var(--border);color:#0f172a;font-size:13px}
+    .kbd{font-family:ui-monospace, Menlo, Monaco, Consolas; background:#eef2ff; padding:2px 6px;border-radius:6px;border:1px solid #c7d2fe}
+    /* Level accent borders */
+    .level[data-level="1"]{border-top:4px solid var(--lv1)}
+    .level[data-level="2"]{border-top:4px solid var(--lv2)}
+    .level[data-level="3"]{border-top:4px solid var(--lv3)}
+  </style>
+</head>
+<body>
+  
+
+
+
+
+<header style="padding:12px 16px;border-bottom:1px solid #e2e8f0;background:#fff; display:flex; align-items:center; flex-wrap:wrap; gap:12px;">
+
+  <!-- Brand: logo + title -->
+  <div style="display:flex;align-items:center;gap:12px;">
+    <!-- IMG tag para lumabas ang logo -->
+    <img src="MathTibay Logo.png" alt="MathTibay Logo" width="60" height="60">
+    
+    <div>
+      <h1 style="font-size:20px;margin:0;">MathTibay — Strengthening Foundational Math Skills</h1>
+      <div style="font-size:14px;color:#475569;">Practice • Level Up • Check your growth</div>
+    </div>
+  </div>
+
+  <!-- Right-side navigation -->
+  <div style="margin-left:auto; display:flex; gap:12px; align-items:center;">
+    <!-- Dashboard button -->
+    <a href="dashboard.html"
+       style="text-decoration:none;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#f1f5f9;color:#1f2937;">
+       Dashboard
+    </a>
+
+    
+  </div>
+
+</header>
+
+<script>
+  function installHelp() {
+    alert('To install: On Chrome/Edge, tap the menu (⋮) then "Add to Home screen" or "Install app".');
+  }
+</script>
+
+
+  <main class="container">
+    <section class="notice">
+      <strong>Guidelines:</strong> Recommended time per session is <span class="kbd">15–20 minutes</span>. Use scratch paper only. Calculators and other apps are not allowed during practice. Works offline once loaded.
+    </section>
+
+    <div class="grid">
+      <!-- Level 1 -->
+      <div class="level" data-level="1">
+        <h2>Level 1: Foundational Skills</h2>
+        <div class="pill">Focus: Number recognition, ones/tens, basic add/sub</div>
+        <div class="sessions">
+          <div class="card" data-id="s1">
+            <div>
+              <h3>Session 1 — Number Recognition & Place Value</h3>
+              <div class="meta">Time: 15 mins • Items: 40</div>
+            </div>
+            <div class="actions">
+              <button class="btn preview" onclick="preview('Session 1 Number Recognition  Place Value.html')">Preview</button>
+              <button class="btn start" onclick="start('Session 1 Number Recognition  Place Value.html','s1')">Start</button>
+            </div>
+          </div>
+          <div class="card" data-id="s2">
+            <div>
+              <h3>Session 2 — Basic Addition & Subtraction (2-digit)</h3>
+              <div class="meta">Time: 15 mins • Items: 40</div>
+            </div>
+            <div class="actions">
+              <button class="btn preview" onclick="preview('session2.html')">Preview</button>
+              <button class="btn start" onclick="start('session2.html','s2')">Start</button>
+            </div>
+          </div>
+          <div class="card" data-id="s3">
+            <div>
+              <h3>Session 3 — Subtraction with Regrouping & Intro to ×</h3>
+              <div class="meta">Time: 20 mins • Items: 40</div>
+            </div>
+            <div class="actions">
+              <button class="btn preview" onclick="preview('session3.html')">Preview</button>
+              <button class="btn start" onclick="start('session3.html','s3')">Start</button>
+            </div>
+          </div>
+        </div>
+        <div class="progress"><div class="bar lv1" id="bar1"></div></div>
+      </div>
+
+      <!-- Level 2 -->
+      <div class="level" data-level="2">
+        <h2>Level 2: Intermediate Skills</h2>
+        <div class="pill">Focus: Thousands place, regrouping, ×/÷ facts</div>
+        <div class="sessions">
+          <div class="card" data-id="s4">
+            <div>
+              <h3>Session 4 — Place Value to Thousands & Mixed Ops</h3>
+              <div class="meta">Time: 20 mins • Items: 40</div>
+            </div>
+            <div class="actions">
+              <button class="btn preview" onclick="preview('session4.html')">Preview</button>
+              <button class="btn start" onclick="start('session4.html','s4')">Start</button>
+            </div>
+          </div>
+          <div class="card" data-id="s5">
+            <div>
+              <h3>Session 5 — Multiplication & Division Fluency</h3>
+              <div class="meta">Time: 20 mins • Items: 40</div>
+            </div>
+            <div class="actions">
+              <button class="btn preview" onclick="preview('session5.html')">Preview</button>
+              <button class="btn start" onclick="start('session5.html','s5')">Start</button>
+            </div>
+          </div>
+          <div class="card" data-id="s6">
+            <div>
+              <h3>Session 6 — Thousands + Regrouping + Mixed Ops</h3>
+              <div class="meta">Time: 20 mins • Items: 40</div>
+            </div>
+            <div class="actions">
+              <button class="btn preview" onclick="preview('session6.html')">Preview</button>
+              <button class="btn start" onclick="start('session6.html','s6')">Start</button>
+            </div>
+          </div>
+        </div>
+        <div class="progress"><div class="bar lv2" id="bar2"></div></div>
+      </div>
+
+      <!-- Level 3 -->
+      <div class="level" data-level="3">
+        <h2>Level 3: Proficient Skills</h2>
+        <div class="pill">Focus: 10,000, estimation & rounding, multi-step problems</div>
+        <div class="sessions">
+          <div class="card" data-id="s7">
+            <div>
+              <h3>Session 7 — Multi-digit Ops & Word Problems</h3>
+              <div class="meta">Time: 20 mins • Items: 40</div>
+            </div>
+            <div class="actions">
+              <button class="btn preview" onclick="preview('session7.html')">Preview</button>
+              <button class="btn start" onclick="start('session7.html','s7')">Start</button>
+            </div>
+          </div>
+          <div class="card" data-id="s8">
+            <div>
+              <h3>Session 8 — Rounding, Estimation & Mixed Ops</h3>
+              <div class="meta">Time: 20 mins • Items: 40</div>
+            </div>
+            <div class="actions">
+              <button class="btn preview" onclick="preview('session8.html')">Preview</button>
+              <button class="btn start" onclick="start('session8.html','s8')">Start</button>
+            </div>
+          </div>
+          <div class="card" data-id="s9">
+            <div>
+              <h3>Session 9 — Mastery Check (Capstone)</h3>
+              <div class="meta">Time: 25 mins • Items: 40</div>
+            </div>
+            <div class="actions">
+              <button class="btn preview" onclick="preview('session9.html')">Preview</button>
+              <button class="btn start" onclick="start('session9.html','s9')">Start</button>
+            </div>
+          </div>
+        </div>
+        <div class="progress"><div class="bar lv3" id="bar3"></div></div>
+      </div>
+    </div>
+
+    <section class="footer">
+      MathTibay PWA • San Guillermo National High School • Region III — Central Luzon
+    </section>
+  </main>
+
+  <script>
+    // Simple localStorage progress tracking (offline-capable)
+    const ids = ['s1','s2','s3','s4','s5','s6','s7','s8','s9'];
+    function pct(level){
+      const range = level===1?ids.slice(0,3):level===2?ids.slice(3,6):ids.slice(6,9);
+      const done = range.filter(id=>localStorage.getItem('done_'+id)==='1').length;
+      return Math.round(done/range.length*100);
+    }
+    function paint(){
+      document.getElementById('bar1').style.width = pct(1)+'%';
+      document.getElementById('bar2').style.width = pct(2)+'%';
+      document.getElementById('bar3').style.width = pct(3)+'%';
+    }
+    function start(url,id){
+      // Request fullscreen (optional) to help focus
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen();
+      }
+      const t = 20*60; // default 20 minutes
+      localStorage.setItem('timer_'+id, t);
+      window.location.href = url;
+    }
+    function preview(url){
+      window.open(url,'_blank');
+    }
+    paint();
+  </script>
+</body>
+</html>

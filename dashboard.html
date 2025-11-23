@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="fil">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MathTibay — Progress Dashboard</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    :root{
+      --bg:#f8fafc; --surface:#ffffff; --border:#e2e8f0; --text:#0f172a; --muted:#475569;
+      --lv1:#22c55e; --lv2:#f59e0b; --lv3:#6366f1;
+    }
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial}
+    header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;background:#ffffff;border-bottom:1px solid var(--border);position:sticky;top:0}
+    h1{font-size:20px;margin:0}
+    .container{max-width:960px;margin:0 auto;padding:16px}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media(min-width:800px){.grid{grid-template-columns:repeat(3,1fr)}}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:12px}
+    .card h2{margin:0 0 8px;font-size:16px}
+    .list{display:grid;grid-template-columns:1fr;gap:8px}
+    .row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--border);border-radius:10px;padding:8px}
+    .badge{border-radius:999px;padding:4px 8px;font-size:12px;color:#fff}
+    .done{background:linear-gradient(90deg,#86efac,#22c55e)}
+    .todo{background:#cbd5e1;color:#0f172a}
+    .warn{background:linear-gradient(90deg,#fde68a,#f59e0b);color:#0f172a}
+    .tip{margin:10px 0;padding:10px;border:1px dashed var(--border);background:#fff;border-radius:10px;color:var(--muted);font-size:13px}
+    .footer{margin-top:12px;color:var(--muted);font-size:12px}
+	
+ .score-bad {
+    color: #b91c1c;             /* strong red */
+    font-weight: 700;
+    margin-left: 4px;}
+
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MathTibay — Progress Dashboard</h1>
+    <nav>
+      <a href="index.html">← Bumalik sa Index</a>
+    </nav>
+  </header>
+  <main class="container">
+    <div class="tip">
+      <strong>Status:</strong> <span id="net"></span> • <span id="pwa"></span>
+    </div>
+    <div class="grid">
+      <section class="card" style="border-top:4px solid var(--lv1)">
+        <h2>Level 1</h2>
+        <div class="list" id="lv1"></div>
+      </section>
+      <section class="card" style="border-top:4px solid var(--lv2)">
+        <h2>Level 2</h2>
+        <div class="list" id="lv2"></div>
+      </section>
+      <section class="card" style="border-top:4px solid var(--lv3)">
+        <h2>Level 3</h2>
+        <div class="list" id="lv3"></div>
+      </section>
+    </div>
+    <section class="footer">
+      Works offline • Progress is stored on this device only. For teacher view, sync via LMS when online.
+    </section>
+  </main>
+  <script>
+    const ids = ['s1','s2','s3','s4','s5','s6','s7','s8','s9'];
+    const names = {
+      s1:'Session 1 Number Recognition  Place Value',
+      s2:'Session 2 — Basic Addition & Subtraction',
+      s3:'Session 3 — Subtraction with Regrouping & Intro to ×',
+      s4:'Session 4 — Place Value to Thousands & Mixed Ops',
+      s5:'Session 5 — Multiplication & Division Fluency',
+      s6:'Session 6 — Thousands + Regrouping + Mixed Ops',
+      s7:'Session 7 — Multi-digit Ops & Word Problems',
+      s8:'Session 8 — Rounding, Estimation & Mixed Ops',
+      s9:'Session 9 — Mastery Check (Capstone)'
+    };
+   
+
+function row(id){
+    const done      = localStorage.getItem('done_'+id)==='1';
+    const switches  = Number(localStorage.getItem('switch_'+id)||0);
+    const time      = Number(localStorage.getItem('time_'+id)||0);      // seconds
+    const score     = Number(localStorage.getItem('score_'+id)||0);     // raw score
+    const scoreMax  = Number(localStorage.getItem('scoreMax_'+id)||0);  // max score
+
+    const THRESHOLD = 32;
+    const mm = Math.floor(time/60), ss = String(time%60).padStart(2,'0');
+
+    // Badge label
+    const statusLabel = done ? 'Completed' : 'Not completed';
+
+    // If Not completed and we have a score, show "score x/y < 32" in red
+    const needsRedScore = (!done && scoreMax > 0 && score < THRESHOLD);
+    const redScoreHTML  = needsRedScore
+      ? ` <span class="score-bad">— score ${score}/${scoreMax} &lt; ${THRESHOLD}</span>`
+      : '';
+
+    // Row container
+    const wrap = document.createElement('div');
+    wrap.className = 'row';
+
+    // Left area: title + details
+    const detailsLine = scoreMax
+      ? `Score: ${score}/${scoreMax}`
+      : `Score: —`;
+
+    wrap.innerHTML =
+      `<div>
+         <div><strong>${names[id]}</strong></div>
+         <div style="font-size:12px;color:#475569">
+           Tab switches: ${switches} • Time on task: ${mm}:${ss} • ${detailsLine}
+         </div>
+       </div>
+       <div class="badge ${done ? 'done' : 'todo'}">${statusLabel}${redScoreHTML}</div>`;
+
+    return wrap;
+
+
+    }
+    function mount(){
+      const lv1 = document.getElementById('lv1');
+      const lv2 = document.getElementById('lv2');
+      const lv3 = document.getElementById('lv3');
+      [row('s1'),row('s2'),row('s3')].forEach(r=>lv1.appendChild(r));
+      [row('s4'),row('s5'),row('s6')].forEach(r=>lv2.appendChild(r));
+      [row('s7'),row('s8'),row('s9')].forEach(r=>lv3.appendChild(r));
+      document.getElementById('net').textContent = navigator.onLine? 'Offline-ready (online now)': 'Offline';
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      document.getElementById('pwa').textContent = isStandalone? 'Installed as App' : 'Running in Browser';
+    }
+    mount();
+  </script>
+</body>
+</html>

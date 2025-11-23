@@ -1,0 +1,23 @@
+<!-- Drop this at the bottom of each session page -->
+<script>
+  (function(){
+    // Set the session id here, e.g., 's1', 's2', ...
+    const SID = 'sX'; // REPLACE with actual id
+    // Tab switch counter (deterrent only)
+    let switches = Number(localStorage.getItem('switch_'+SID)||0);
+    document.addEventListener('visibilitychange',()=>{
+      if (document.hidden){switches += 1; localStorage.setItem('switch_'+SID', String(switches));}
+    });
+    // Basic countdown (optional)
+    let remain = Number(localStorage.getItem('timer_'+SID)||1200);
+    const tick = setInterval(()=>{
+      remain -= 1; if(remain<=0){clearInterval(tick); alert('Time is up! Submitting...'); markDone();}
+      localStorage.setItem('timer_'+SID, String(remain));
+      const elapsed = Number(localStorage.getItem('start_'+SID)||Date.now());
+      localStorage.setItem('time_'+SID, String(Math.floor((Date.now()-elapsed)/1000)));
+    },1000);
+    // Call this when the learner submits/completes
+    function markDone(){ localStorage.setItem('done_'+SID,'1'); window.location.href='index.html'; }
+    window.markDone = markDone; // expose for your submit button
+  })();
+</script>
