@@ -477,94 +477,192 @@ H5P.Video=function(p,h){function f(n,e,t={}){var i=this;i.oldTime=t.previousStat
   .tts-btn:hover { background: #0f0f7a; }
 </style>
 
+
+
 <script>
-  /* ------------ SIMPLE TEXT-TO-SPEECH ------------ */
-  function speak(text, lang = 'en-US') {
-    if (!text) return;
-    try {
-      if (speechSynthesis.speaking) speechSynthesis.cancel(); // stop ongoing
-      const utter = new SpeechSynthesisUtterance(text.trim());
-      utter.lang = lang;     // 'en-US' (English). Try 'fil-PH' / 'tl-PH' for Filipino (depends on device/browser)
-      utter.rate = 1.0;      // speed (0.1–2.0)
-      utter.pitch = 1.0;     // voice pitch (0–2)
-      speechSynthesis.speak(utter);
-    } catch (e) {
-      console.warn('TTS error:', e);
+/* =============== SPEECH (Web Speech API) =============== */
+function speak(text, langOrVoice = 'en-US') {
+  try {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    const voices = window.speechSynthesis.getVoices();
+
+    let chosenVoice = null;
+    if (typeof langOrVoice === 'object' && langOrVoice && langOrVoice.name) {
+      chosenVoice = langOrVoice;
+    } else {
+      const code = String(langOrVoice).toLowerCase();
+      chosenVoice = voices.find(v => (v.lang || '').toLowerCase() === code) 
+                 || voices.find(v => (v.lang || '').toLowerCase().startsWith(code.split('-')[0]));
     }
-  }
-
-  /* ------------ FIND CURRENT QUESTION TEXT (robust selectors) ------------ */
-  function textOf(el) { return (el && el.innerText) ? el.innerText.trim() : ''; }
-  function isVisible(el) {
-    if (!el) return false;
-    const s = getComputedStyle(el);
-    if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0) return false;
-    const rect = el.getBoundingClientRect();
-    return rect.width > 0 && rect.height > 0;
-  }
-
-  function getCurrentQuestionText() {
-    // 1) Common H5P/Lumi selectors
-    const selectors = [
-      '.h5p-question .question-text',                // H5P Question (text prompt)
-      '.h5p-question-content .h5p-question-introduction',
-      '.h5p-question-content .h5p-question-text',
-      '.h5p-multichoice .h5p-question-introduction',
-      '.h5p-multichoice .h5p-question-text',
-      '.h5p-true-false .h5p-question-text',
-      '.h5p-single-choice-set .h5p-question-text',
-      '.h5p-blanks .h5p-question-text',
-      '.h5p-interactive-book .h5p-page-content h1, .h5p-interactive-book .h5p-page-content h2',
-      '.h5p-interactive-video .h5p-dialog',         // prompts in IV
-      '.h5p-column .h5p-content > h1, .h5p-column .h5p-content > h2, .h5p-column .h5p-content > p'
-    ];
-
-    for (const sel of selectors) {
-      const el = document.querySelector(sel);
-      if (isVisible(el)) {
-        const t = textOf(el);
-        if (t) return t;
-      }
+    if (chosenVoice) {
+      utter.voice = chosenVoice;
+      utter.lang = chosenVoice.lang || 'en-US';
+    } else {
+      utter.lang = (typeof langOrVoice === 'string') ? langOrVoice : 'en-US';
     }
 
-    // 2) Fallback: largest visible heading or block with text
-    const candidates = Array.from(document.querySelectorAll('h1,h2,h3,.h5p-question,.h5p-question-content,.h5p-content,.q .stem'));
-    let best = '';
-    candidates.forEach(el => {
-      if (!isVisible(el)) return;
+    utter.rate = 1;      // bilis
+    utter.pitch = 1;     // tono
+    utter.volume = 1;    // lakas
+
+    const speakNow = () => window.speechSynthesis.speak(utter);
+    if (!voices || voices.length === 0) {
+      window.speechSynthesis.onvoiceschanged = speakNow;
+    } else {
+      speakNow();
+    }
+  } catch (e) {
+    console.error('TTS speak() error:', e);
+    alert('Text-to-Speech not available on this device/browser.');
+  }
+}
+
+/* =============== NORMALIZATION (para sa minus/equals) =============== */
+function normalizeMathForTTS(raw) {
+  if (!raw) return raw;
+  let text = raw;
+
+  // I‑normalize lahat ng dash variants para masalo ng rules
+  text = text
+    .replace(/\u2212/g, '-') // Unicode minus → hyphen
+    .replace(/\u2013/g, '-') // en dash → hyphen
+    .replace(/\u2014/g, '-'); // em dash → hyphen
+
+  // Non‑breaking space → normal space
+  text = text.replace(/\u00A0/g, ' ');
+
+  // digits - digits (multi-digit ok): 9-1, 12-3, 100 - 45
+  text = text.replace(/(\d+)\s*-\s*(\d+)/g, '$1 minus $2');
+
+  // " - " na may spaces sa magkabilang gilid → " minus "
+  text = text.replace(/\s-\s/g, ' minus ');
+
+  // hyphen na HINDI nasa loob ng salita (iwas co-operate) → " minus "
+  text = text.replace(/(?<![A-Za-z])-(?![A-Za-z])/g, ' minus ');
+
+  // Optional: a-b o x-y → "minus" (para consistent sa numeracy)
+  text = text.replace(/([A-Za-z])\s*-\s*([A-Za-z])/g, '$1 minus $2');
+
+  // equals sign → " equals "
+  text = text.replace(/\s*=\s*/g, ' equals ');
+
+  // linisin spaces
+  text = text.replace(/\s{2,}/g, ' ').trim();
+
+  return text;
+}
+
+function speakMathAware(text, voice) {
+  speak(normalizeMathForTTS(text), voice);
+}
+
+/* =============== TEXT PICKER (H5P/Lumi) =============== */
+function textOf(el) { return (el && el.innerText) ? el.innerText.trim() : ''; }
+function isVisible(el) {
+  if (!el) return false;
+  const s = getComputedStyle(el);
+  if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0) return false;
+  const rect = el.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+}
+function getCurrentQuestionText() {
+  const selectors = [
+    '.h5p-question .question-text',
+    '.h5p-question-content .h5p-question-introduction',
+    '.h5p-question-content .h5p-question-text',
+    '.h5p-multichoice .h5p-question-introduction',
+    '.h5p-multichoice .h5p-question-text',
+    '.h5p-true-false .h5p-question-text',
+    '.h5p-single-choice-set .h5p-question-text',
+    '.h5p-blanks .h5p-question-text',
+    '.h5p-interactive-book .h5p-page-content h1, .h5p-interactive-book .h5p-page-content h2',
+    '.h5p-interactive-video .h5p-dialog',
+    '.h5p-column .h5p-content > h1, .h5p-column .h5p-content > h2, .h5p-column .h5p-content > p'
+  ];
+  for (const sel of selectors) {
+    const el = document.querySelector(sel);
+    if (isVisible(el)) {
       const t = textOf(el);
-      // prefer longer meaningful text
-      if (t && t.length > best.length) best = t;
-    });
-    return best;
+      if (t) return t;
+    }
+  }
+  const candidates = Array.from(document.querySelectorAll(
+    'h1,h2,h3,.h5p-question,.h5p-question-content,.h5p-content,.q .stem'
+  ));
+  let best = '';
+  candidates.forEach(el => {
+    if (!isVisible(el)) return;
+    const t = textOf(el);
+    if (t && t.length > best.length) best = t;
+  });
+  return best;
+}
+
+/* =============== BUTTON + CSS (para siguradong visible) =============== */
+function injectTTSStylesOnce() {
+  if (document.getElementById('tts-btn-style')) return;
+  const style = document.createElement('style');
+  style.id = 'tts-btn-style';
+  style.textContent = `
+    .tts-btn {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      z-index: 2147483647; /* above H5P overlays */
+      padding: 10px 12px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+      background: #1f6feb; color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+      cursor: pointer;
+    }
+    .tts-btn:hover { background: #1559c0; }
+  `;
+  document.head.appendChild(style);
+}
+
+function ensureTTSButton() {
+  const existing = document.querySelector('.tts-btn');
+  if (existing) {
+    existing.style.display = 'inline-block';
+    existing.style.visibility = 'visible';
+    return;
   }
 
-  /* ------------ BUTTON SETUP ------------ */
-  function ensureTTSButton() {
-    if (document.querySelector('.tts-btn')) return;
-    const btn = document.createElement('button');
-    btn.className = 'tts-btn'; btn.type = 'button';
-    btn.textContent = '🔊 Read question';
-    btn.title = 'Listen to the current question';
+  const btn = document.createElement('button');
+  btn.className = 'tts-btn'; btn.type = 'button';
+  btn.textContent = '🔊 Read question';
+  btn.title = 'Listen to the current question';
 
-    btn.onclick = () => {
-      const text = getCurrentQuestionText();
-      if (!text) {
-        // last resort: read visible options headers, if any
-        const alt = document.querySelector('.h5p-question, .h5p-content, .q');
-        const fallback = textOf(alt);
-        speak(fallback || 'No question text detected.', 'en-US');
-      } else {
-        speak(text, 'en-US'); // change to 'fil-PH' or 'tl-PH' if you prefer Filipino (device support varies)
-      }
-    };
-    document.body.appendChild(btn);
-  }
+  btn.onclick = () => {
+    const text = getCurrentQuestionText();
+    const voice = 'en-US'; // pwede mong palitan: 'en-GB' or 'tl-PH' (kung supported ng device)
+    if (!text) {
+      const alt = document.querySelector('.h5p-question, .h5p-content, .q');
+      const fallback = textOf(alt) || 'No question text detected.';
+      speakMathAware(fallback, voice);
+    } else {
+      speakMathAware(text, voice);
+    }
+  };
 
-  // Create the button now and re-assert if H5P re-renders
+  document.body.appendChild(btn);
+}
+
+/* =============== INIT (DOMContentLoaded + Observer) =============== */
+function initTTS() {
+  injectTTSStylesOnce();
   ensureTTSButton();
   const mo = new MutationObserver(() => ensureTTSButton());
   mo.observe(document.body, { childList: true, subtree: true });
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initTTS);
+} else {
+  initTTS();
+}
 </script>
 <!-- === END FLOATING VOICE BUTTON === -->
 
